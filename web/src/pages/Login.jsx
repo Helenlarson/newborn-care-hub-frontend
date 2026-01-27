@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiLogin } from "../api/auth";
+import { apiLogin, apiMe } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
@@ -19,10 +19,33 @@ export default function Login() {
 
     try {
       const data = await apiLogin({ email, password });
-      login({ token: data.token, user: data.user });
+
+      if (!data.token) {
+        throw new Error("No token returned from login.");
+      }
+
+      // Se o backend já retornou user no login
+      if (data.user) {
+        login({ token: data.token, user: data.user });
+        navigate("/providers");
+        return;
+      }
+
+      // Se o backend NÃO retorna user no login:
+      // salva token e busca /auth/me
+      localStorage.setItem("token", data.token);
+
+      const me = await apiMe();
+      login({ token: data.token, user: me });
+
       navigate("/providers");
     } catch (err) {
-      setError(err?.response?.data?.detail || "Login failed.");
+      const msg =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Login failed.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -31,10 +54,25 @@ export default function Login() {
   return (
     <div style={{ maxWidth: 420, margin: "40px auto", padding: 16 }}>
       <h2>Login</h2>
+
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-        <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <input
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+        />
+
+        <input
+          placeholder="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+        />
+
         {error && <div style={{ color: "crimson" }}>{error}</div>}
+
         <button disabled={loading} type="submit">
           {loading ? "Logging in..." : "Login"}
         </button>
