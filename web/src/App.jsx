@@ -1,8 +1,10 @@
+import FamilyMe from "./pages/FamilyMe";
 import { useEffect, useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
 import { apiGet, getAccessToken, clearTokens } from "./api/client";
 import Login from "./pages/Login";
+
 
 
 export default function App() {
@@ -27,6 +29,7 @@ export default function App() {
       <nav style={{ display: "flex", gap: 12, marginBottom: 16 }}>
         <Link to="/">Home</Link>
         <Link to="/login">Login</Link>
+        <Link to="/family-me">Family Me</Link>
         
 
         {logged && (
@@ -66,6 +69,7 @@ export default function App() {
           path="/login"
           element={<Login onLogin={() => setLogged(true)} />}
         />
+        <Route path="/family-me" element={<FamilyMe />} />
         
       </Routes>
     </div>
