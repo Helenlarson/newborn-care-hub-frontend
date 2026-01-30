@@ -1,101 +1,112 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiSignup } from "../api/auth";
-import { useAuth } from "../context/AuthContext";
+
+function toApiRole(uiRole) {
+  if (uiRole === "professional") return "provider";
+  return uiRole; // "family"
+}
 
 export default function Signup() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const [sp] = useSearchParams();
 
-  const [role, setRole] = useState(""); // family | provider
+  const [role, setRole] = useState(sp.get("role") || ""); // UI: family | professional
 
-  // user
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // shared profile
+  // comuns
   const [displayName, setDisplayName] = useState("");
-
-  // family
   const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [zipcode, setZipcode] = useState("");
 
   // provider
-  const [headline, setHeadline] = useState("");
-  const [serviceTypes, setServiceTypes] = useState("");
+  const [headline, setHeadline] = useState(""); // ex: Doula
+  const [serviceTypesText, setServiceTypesText] = useState(""); // ex: doula, nanny
+  const [bio, setBio] = useState("");
+  const [photo, setPhoto] = useState(""); // por enquanto string (url/base64), ou vazio
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const canSubmit = useMemo(() => {
     if (!role || !email || !password || !displayName) return false;
-
-    if (role === "family") return true;
-    if (role === "provider") return headline.length > 0;
-
-    return false;
+    if (role === "professional" && !headline) return false;
+    return true;
   }, [role, email, password, displayName, headline]);
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
+    const apiRole = toApiRole(role);
+
+    const service_types = serviceTypesText
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     const payload = {
-      role,
+      role: apiRole, // backend: provider | family
       user: { email, password },
       profile:
-        role === "family"
+        apiRole === "provider"
           ? {
               display_name: displayName,
+              headline,
+              service_types, // array de strings: ["doula"]
               city,
+              state,
               zipcode,
+              bio,
+              photo,
             }
           : {
+              // suposição mais provável p/ family (se seu backend pedir mais campos, ele vai acusar)
               display_name: displayName,
-              headline,
-              service_types: serviceTypes
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
+              city,
+              state,
+              zipcode,
+              photo,
             },
     };
 
     try {
-      const data = await apiSignup(payload);
-
-      // se backend já retorna token
-      if (data.token && data.user) {
-        login({ token: data.token, user: data.user });
-        navigate("/providers");
-      } else {
-        navigate("/login");
-      }
+      await apiSignup(payload);
+      navigate("/login", { replace: true });
     } catch (err) {
-      setError(err?.response?.data?.detail || "Signup failed");
+      const data = err?.response?.data;
+      console.log("Signup error:", data || err);
+      const msg =
+        data?.detail ||
+        data?.message ||
+        (data ? JSON.stringify(data, null, 2) : null) ||
+        "Falha no cadastro.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div style={{ maxWidth: 560, margin: "40px auto", padding: 16 }}>
-      <h2>Create your account</h2>
+    <div style={{ maxWidth: 600, margin: "40px auto", padding: 16 }}>
+      <h2>Criar conta</h2>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-        {/* USER TYPE */}
         <label>
-          I am a:
+          Tipo de usuário:
           <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="">Select user type</option>
-            <option value="family">Family</option>
-            <option value="provider">Professional</option>
+            <option value="">Selecione…</option>
+            <option value="family">Familiar</option>
+            <option value="professional">Profissional</option>
           </select>
         </label>
 
-        {/* COMMON */}
         <input
-          placeholder="Display name"
+          placeholder="Nome de exibição"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
         />
@@ -104,51 +115,56 @@ export default function Signup() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
         />
 
         <input
+          placeholder="Senha"
           type="password"
-          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
         />
 
-        {/* FAMILY */}
-        {role === "family" && (
-          <>
-            <input
-              placeholder="City"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-            />
-            <input
-              placeholder="Zipcode"
-              value={zipcode}
-              onChange={(e) => setZipcode(e.target.value)}
-            />
-          </>
-        )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <input placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
+          <input placeholder="Estado" value={state} onChange={(e) => setState(e.target.value)} />
+        </div>
 
-        {/* PROVIDER */}
-        {role === "provider" && (
+        <input placeholder="Zipcode" value={zipcode} onChange={(e) => setZipcode(e.target.value)} />
+
+        {role === "professional" && (
           <>
             <input
-              placeholder="Professional headline"
+              placeholder="Headline (ex: Doula)"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
             />
+
             <input
-              placeholder="Service types (comma separated)"
-              value={serviceTypes}
-              onChange={(e) => setServiceTypes(e.target.value)}
+              placeholder='Service types (separados por vírgula) ex: "doula, nanny"'
+              value={serviceTypesText}
+              onChange={(e) => setServiceTypesText(e.target.value)}
+            />
+
+            <textarea placeholder="Bio" rows={4} value={bio} onChange={(e) => setBio(e.target.value)} />
+
+            <input
+              placeholder="Photo (string/url/base64) — opcional"
+              value={photo}
+              onChange={(e) => setPhoto(e.target.value)}
             />
           </>
         )}
 
-        {error && <div style={{ color: "crimson" }}>{error}</div>}
+        {error && (
+          <pre style={{ color: "crimson", whiteSpace: "pre-wrap" }}>
+            {error}
+          </pre>
+        )}
 
-        <button disabled={!canSubmit || loading}>
-          {loading ? "Creating account..." : "Create account"}
+        <button type="submit" disabled={!canSubmit || loading}>
+          {loading ? "Criando..." : "Criar conta"}
         </button>
       </form>
     </div>

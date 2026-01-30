@@ -1,64 +1,290 @@
-import { useEffect, useState } from "react";
-import { apiMe } from "../api/auth";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import client from "../api/client";
+import { apiGetMyProfile, apiUpdateMyProfile } from "../api/me";
+
+function isProviderRole(role) {
+  return role === "provider" || role === "professional";
+}
+
+async function uploadToCloudinary(file) {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error(
+      "Cloudinary não configurado. Defina VITE_CLOUDINARY_CLOUD_NAME e VITE_CLOUDINARY_UPLOAD_PRESET."
+    );
+  }
+
+  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+  const form = new FormData();
+  form.append("file", file);
+  form.append("upload_preset", uploadPreset);
+
+  // opcional: se não colocou a pasta no preset
+  // form.append("folder", "leliconect/avatars");
+
+  // opcional: transforma para avatar (leve e padronizado)
+  form.append("transformation", "c_fill,g_face,w_256,h_256,q_auto,f_auto");
+
+  const res = await fetch(url, { method: "POST", body: form });
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Falha ao enviar imagem para Cloudinary.");
+  }
+
+  return data.secure_url;
+}
 
 export default function EditProfile() {
-  const { role, setUser } = useAuth();
-  const [form, setForm] = useState({ display_name: "", city: "", zipcode: "", headline: "" });
+  const { role } = useAuth();
+
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  // fields
+  const [displayName, setDisplayName] = useState("");
+  const [headline, setHeadline] = useState(""); // provider
+  const [serviceTypesText, setServiceTypesText] = useState(""); // provider: "doula, nanny"
+  const [city, setCity] = useState("");
+  const [stateUF, setStateUF] = useState("");
+  const [zipcode, setZipcode] = useState("");
+  const [bio, setBio] = useState(""); // provider
+  const [photo, setPhoto] = useState(""); // URL
+
+  // foto UI
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  const isProvider = useMemo(() => isProviderRole(role), [role]);
 
   useEffect(() => {
     (async () => {
-      const me = await apiMe();
-      // ajuste conforme seu backend retorna:
-      setForm({
-        display_name: me.display_name || "",
-        city: me.city || "",
-        zipcode: me.zipcode || "",
-        headline: me.headline || "",
-      });
-      setLoading(false);
+      setLoading(true);
+      setError("");
+      setSuccess("");
+
+      try {
+        const data = await apiGetMyProfile(role);
+        const profile = data?.profile ?? data;
+
+        setDisplayName(profile?.display_name || "");
+        setHeadline(profile?.headline || "");
+        setCity(profile?.city || "");
+        setStateUF(profile?.state || "");
+        setZipcode(profile?.zipcode || "");
+        setBio(profile?.bio || "");
+        setPhoto(profile?.photo || "");
+        setPhotoPreview(profile?.photo || "");
+
+        const st = profile?.service_types;
+        setServiceTypesText(Array.isArray(st) ? st.join(", ") : "");
+      } catch (err) {
+        const data = err?.response?.data;
+        setError(
+          data?.detail ||
+            (data ? JSON.stringify(data, null, 2) : "Não foi possível carregar seu perfil.")
+        );
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, []);
+  }, [role]);
 
-  const update = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  async function onPickPhoto(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const save = async (e) => {
+    const maxMb = 2;
+    if (file.size > maxMb * 1024 * 1024) {
+      alert(`Arquivo muito grande. Use até ${maxMb}MB.`);
+      return;
+    }
+
+    const localPreview = URL.createObjectURL(file);
+    setPhotoPreview(localPreview);
+
+    setPhotoUploading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const url = await uploadToCloudinary(file);
+
+      // seu backend limita 200 caracteres; Cloudinary costuma caber
+      if (url.length > 200) {
+        alert(
+          "A URL gerada ficou maior que 200 caracteres. Seu backend limita photo a 200. " +
+            "Se acontecer, considere aumentar max_length no backend."
+        );
+      }
+
+      setPhoto(url);
+      setPhotoPreview(url);
+      setSuccess("Foto enviada com sucesso. Clique em “Salvar alterações” para aplicar no perfil.");
+    } catch (err) {
+      alert(err?.message || "Falha ao enviar imagem.");
+      setPhotoPreview(photo || "");
+    } finally {
+      setPhotoUploading(false);
+      try {
+        URL.revokeObjectURL(localPreview);
+      } catch {}
+    }
+  }
+
+  async function onSave(e) {
     e.preventDefault();
-    // ajuste endpoint:
-    const { data } = await client.patch("/me", form);
-    setUser((u) => ({ ...u, ...data }));
-    alert("Saved!");
-  };
+    setSaving(true);
+    setError("");
+    setSuccess("");
 
-  if (loading) return <div style={{ padding: 16 }}>Loading...</div>;
+    const service_types = serviceTypesText
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const profilePayload = {
+      display_name: displayName.trim(),
+      city: city.trim(),
+      state: stateUF.trim(),
+      zipcode: zipcode.trim(),
+      photo: photo || "",
+      ...(isProvider
+        ? {
+            headline: headline.trim(),
+            service_types,
+            bio: bio.trim(),
+          }
+        : {}),
+    };
+
+    try {
+      await apiUpdateMyProfile(role, profilePayload);
+
+      // ✅ sem redirect: apenas feedback
+      setSuccess("Alterações salvas com sucesso!");
+      // opcional: esconder automaticamente depois de alguns segundos
+      setTimeout(() => setSuccess(""), 3500);
+      // opcional: rolar para cima para ver a mensagem
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      const data = err?.response?.data;
+      setError(
+        data?.detail || (data ? JSON.stringify(data, null, 2) : "Não foi possível salvar.")
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <div style={{ padding: 16 }}>Carregando perfil...</div>;
 
   return (
-    <div style={{ maxWidth: 560, margin: "24px auto", padding: 16 }}>
-      <h2>Edit Profile</h2>
+    <div style={{ maxWidth: 700, margin: "24px auto", padding: 16 }}>
+      <h2>Editar perfil</h2>
 
-      <form onSubmit={save} style={{ display: "grid", gap: 12 }}>
+      {!!success && (
+        <div
+          style={{
+            background: "#ECFDF3",
+            border: "1px solid #A7F3D0",
+            color: "#065F46",
+            padding: 12,
+            borderRadius: 8,
+            marginTop: 12,
+            marginBottom: 12,
+          }}
+        >
+          {success}
+        </div>
+      )}
+
+      {!!error && (
+        <pre style={{ color: "crimson", whiteSpace: "pre-wrap", marginTop: 12 }}>
+          {error}
+        </pre>
+      )}
+
+      <form onSubmit={onSave} style={{ display: "grid", gap: 12, marginTop: 12 }}>
         <input
-          placeholder="Display name"
-          value={form.display_name}
-          onChange={(e) => update("display_name", e.target.value)}
+          placeholder="Nome de exibição"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
         />
 
-        {role === "family" && (
+        {isProvider && (
           <>
-            <input placeholder="City" value={form.city} onChange={(e) => update("city", e.target.value)} />
-            <input placeholder="Zipcode" value={form.zipcode} onChange={(e) => update("zipcode", e.target.value)} />
+            <input
+              placeholder="Headline (ex: Doula)"
+              value={headline}
+              onChange={(e) => setHeadline(e.target.value)}
+            />
+
+            <input
+              placeholder='Service types (ex: "doula, nanny")'
+              value={serviceTypesText}
+              onChange={(e) => setServiceTypesText(e.target.value)}
+            />
+
+            <textarea
+              placeholder="Bio"
+              rows={4}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+            />
           </>
         )}
 
-        {role === "provider" && (
-          <>
-            <input placeholder="Headline" value={form.headline} onChange={(e) => update("headline", e.target.value)} />
-          </>
-        )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <input placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
+          <input placeholder="Estado" value={stateUF} onChange={(e) => setStateUF(e.target.value)} />
+        </div>
 
-        <button type="submit">Save</button>
+        <input placeholder="Zipcode" value={zipcode} onChange={(e) => setZipcode(e.target.value)} />
+
+        <div style={{ display: "grid", gap: 8 }}>
+          <label style={{ fontWeight: 600 }}>Foto de perfil</label>
+
+          {photoPreview ? (
+            <img
+              src={photoPreview}
+              alt="Pré-visualização"
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 999,
+                objectFit: "cover",
+                border: "1px solid #eee",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 999,
+                border: "1px solid #eee",
+                display: "grid",
+                placeItems: "center",
+                opacity: 0.6,
+              }}
+            >
+              sem foto
+            </div>
+          )}
+
+          <input type="file" accept="image/*" onChange={onPickPhoto} disabled={photoUploading} />
+          {photoUploading && <div style={{ fontSize: 13, opacity: 0.7 }}>Enviando foto...</div>}
+        </div>
+
+        <button type="submit" disabled={saving || photoUploading || !displayName.trim()}>
+          {saving ? "Salvando..." : "Salvar alterações"}
+        </button>
       </form>
     </div>
   );

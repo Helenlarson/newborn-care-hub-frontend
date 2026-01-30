@@ -1,6 +1,10 @@
 import client from "./client";
 
-export async function apiCreateReview(providerId, payload) {
-  const { data } = await client.post(`/providers/${providerId}/reviews`, payload);
+export async function apiCreateReview({ professional_id, rating, comment }) {
+  const { data } = await client.post("/reviews/", {
+    professional_id: Number(professional_id),
+    rating: Number(rating),
+    comment: String(comment),
+  });
   return data;
 }

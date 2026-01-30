@@ -9,7 +9,7 @@ export default function ProvidersList() {
     zipcode: "",
     city: "",
     state: "",
-    service_types: "",
+    service_type_ids: [],
   });
 
   const [providers, setProviders] = useState([]);
@@ -26,16 +26,13 @@ export default function ProvidersList() {
         zipcode: filters.zipcode || undefined,
         city: filters.city || undefined,
         state: filters.state || undefined,
-        // backend pode esperar array ou string; aqui vai array:
-        service_types: filters.service_types
-          ? filters.service_types.split(",").map((s) => s.trim()).filter(Boolean)
-          : undefined,
+        service_types: (filters.service_type_ids || []).length ? filters.service_type_ids : undefined,
       };
 
       const data = await apiListProviders(params);
-      setProviders(data.results || data); // se usar paginação, results
+      setProviders(data.results || data);
     } catch (err) {
-      setError(err?.response?.data?.detail || "Could not load providers.");
+      setError(err?.response?.data?.detail || "Não foi possível carregar profissionais.");
     } finally {
       setLoading(false);
     }
@@ -48,11 +45,11 @@ export default function ProvidersList() {
 
   return (
     <div style={{ maxWidth: 900, margin: "24px auto", padding: 16 }}>
-      <h2>Professionals</h2>
+      <h2>Profissionais</h2>
 
       <SearchFilters filters={filters} setFilters={setFilters} onSearch={fetchProviders} />
 
-      {loading && <div>Loading...</div>}
+      {loading && <div>Carregando...</div>}
       {error && <div style={{ color: "crimson" }}>{error}</div>}
 
       <div style={{ display: "grid", gap: 12 }}>

@@ -1,36 +1,64 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { apiMe } from "../api/auth";
+import { clearTokens, getAccessToken, setTokens } from "../api/client";
 
 const AuthContext = createContext(null);
 
+function normalizeRole(role) {
+  if (!role) return null;
+  if (role === "provider") return "professional";
+  return role; // "family" | "professional" (ideal)
+}
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem("user");
     return raw ? JSON.parse(raw) : null;
   });
 
-  const isAuthed = !!token;
+  const [booting, setBooting] = useState(true);
 
-  const login = ({ token, user }) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
-    setToken(token);
-    setUser(user);
+  const isAuthed = !!getAccessToken();
+  const role = normalizeRole(user?.role);
+
+  async function loadMe() {
+    try {
+      const me = await apiMe();
+      const normalized = { ...me, role: normalizeRole(me.role) };
+      setUser(normalized);
+      localStorage.setItem("user", JSON.stringify(normalized));
+    } catch {
+      // token inválido/expirado sem refresh ok
+      clearTokens();
+      localStorage.removeItem("user");
+      setUser(null);
+    } finally {
+      setBooting(false);
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthed) loadMe();
+    else setBooting(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const login = ({ access, refresh, user }) => {
+    setTokens({ access, refresh });
+    const normalized = user ? { ...user, role: normalizeRole(user.role) } : null;
+    setUser(normalized);
+    if (normalized) localStorage.setItem("user", JSON.stringify(normalized));
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    clearTokens();
     localStorage.removeItem("user");
-    setToken(null);
     setUser(null);
   };
 
-  // role: "family" | "provider"
-  const role = user?.role || null;
-
   const value = useMemo(
-    () => ({ token, user, role, isAuthed, login, logout, setUser }),
-    [token, user, role, isAuthed]
+    () => ({ user, role, isAuthed, booting, login, logout, setUser, reloadMe: loadMe }),
+    [user, role, isAuthed, booting]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -10,25 +10,32 @@ export default function Topbar() {
     navigate("/", { replace: true });
   };
 
+  const roleLabel =
+    role === "professional" ? "Profissional" : role === "family" ? "Familiar" : "";
+
   return (
     <div style={styles.bar}>
-      <Link to="/providers" style={styles.logo}>
-        Newborn Care Hub
+      <Link to="/professionals" style={styles.logo}>
+        LeliConect
       </Link>
 
       <div style={styles.right}>
         <span style={styles.user}>
-          {user?.display_name || user?.email}
-          {role ? ` (${role})` : ""}
+          {user?.email}
+          {roleLabel ? ` (${roleLabel})` : ""}
         </span>
 
-        <Link to="/profile/edit" style={styles.link}>Edit Profile</Link>
-
-        <Link to="/messages" style={styles.link}>
-          {role === "provider" ? "Family Messages" : "My Messages"}
+        <Link to="/profile/edit" style={styles.link}>
+          Editar perfil
         </Link>
 
-        <button onClick={handleLogout} style={styles.btn}>Logout</button>
+        <Link to="/inbox" style={styles.link}>
+          Mensagens
+        </Link>
+
+        <button onClick={handleLogout} style={styles.btn}>
+          Sair
+        </button>
       </div>
     </div>
   );
