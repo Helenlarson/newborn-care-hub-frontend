@@ -6,7 +6,18 @@ import ProvidersList from "../pages/ProvidersList";
 import ProviderDetail from "../pages/ProviderDetail";
 import Messages from "../pages/Messages";
 import EditProfile from "../pages/EditProfile";
+import Conversation from "../pages/Conversation";
 import ProtectedRoute from "../components/ProtectedRoute";
+import Topbar from "../components/Topbar";
+
+function ProtectedPage({ children }) {
+  return (
+    <ProtectedRoute>
+      <Topbar />
+      {children}
+    </ProtectedRoute>
+  );
+}
 
 export default function AppRoutes() {
   return (
@@ -16,35 +27,47 @@ export default function AppRoutes() {
       <Route path="/signup" element={<Signup />} />
 
       <Route
-        path="/providers"
+        path="/professionals"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <ProvidersList />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
+
       <Route
-        path="/providers/:id"
+        path="/professionals/:id"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <ProviderDetail />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
+
       <Route
-        path="/messages"
+        path="/inbox"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <Messages />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
+
+      <Route
+        path="/conversations/:conversationId"
+        element={
+          <ProtectedPage>
+            <Conversation />
+          </ProtectedPage>
+        }
+      />
+
       <Route
         path="/profile/edit"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <EditProfile />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
     </Routes>
