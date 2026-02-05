@@ -3,24 +3,8 @@ import { Link } from "react-router-dom";
 import { apiInbox } from "../api/messages";
 import { useAuth } from "../context/AuthContext";
 
-function pickFirst(obj, keys) {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (v !== undefined && v !== null && v !== "") return v;
-  }
-  return null;
-}
-
-function inferProfessionalIdFromItem(item) {
-  // tenta vários formatos possíveis
-  return (
-    item?.professional_id ||
-    item?.professional?.id ||
-    item?.professional_profile_id ||
-    item?.provider_id ||
-    item?.provider?.id ||
-    null
-  );
+function isProviderRole(role) {
+  return role === "provider" || role === "professional";
 }
 
 export default function Messages() {
@@ -29,15 +13,9 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // se o usuário logado for provider, às vezes o backend quer o professional_id = "ele mesmo"
+  // fallback: se provider e não vier professional no payload, tenta usar o próprio profile id
   const myProfessionalId = useMemo(() => {
-    return (
-      user?.professional_id ||
-      user?.provider_id ||
-      user?.profile?.id ||
-      user?.professional_profile?.id ||
-      null
-    );
+    return user?.professional_profile?.id || user?.profile?.id || null;
   }, [user]);
 
   useEffect(() => {
@@ -46,15 +24,19 @@ export default function Messages() {
       setError("");
       try {
         const data = await apiInbox(role);
-        const list = data.results || data;
+        const list = data?.results || data || [];
         setItems(list);
 
-        // salva no localStorage os vínculos que vierem no payload (se vierem)
+        // salva professional_id para uso posterior (ex: link e criação de payloads antigos)
         for (const c of list) {
           const convId = Number(c.id || c.conversation_id);
           if (!convId) continue;
 
-          const pid = inferProfessionalIdFromItem(c);
+          const pid =
+            (typeof c.professional === "number" ? c.professional : null) ||
+            c.professional_id ||
+            null;
+
           if (pid) localStorage.setItem(`conv_prof_${convId}`, String(pid));
         }
       } catch (err) {
@@ -76,35 +58,24 @@ export default function Messages() {
         {items.map((c) => {
           const convId = Number(c.id || c.conversation_id);
 
-          const title =
-            pickFirst(c, ["other_name", "professional_name", "family_name"]) || "Conversa";
+          const pid =
+            (typeof c.professional === "number" ? c.professional : null) ||
+            c.professional_id ||
+            Number(localStorage.getItem(`conv_prof_${convId}`) || 0) ||
+            (isProviderRole(role) ? myProfessionalId : null) ||
+            null;
 
-          const last =
-            c?.last_message?.body ||
-            c?.last_message?.message ||
-            c?.last_message ||
-            c?.preview ||
-            "";
+          const title = isProviderRole(role)
+            ? (c.family_name || "Familiar")
+            : (c.professional_name || "Profissional");
 
-          // 1) tenta do payload
-          const pidFromApi = inferProfessionalIdFromItem(c);
-
-          // 2) tenta do localStorage (salvo quando iniciou conversa pelo perfil do provider)
-          const pidFromStorage = convId
-            ? Number(localStorage.getItem(`conv_prof_${convId}`) || 0) || null
-            : null;
-
-          // 3) fallback: se for provider, pode usar o próprio id dele
-          const professionalId =
-            pidFromApi || pidFromStorage || (role === "provider" ? myProfessionalId : null);
-
-          const showWarning = !professionalId;
+          const last = c?.last_message || "";
 
           return (
             <Link
               key={convId}
               to={`/conversations/${convId}`}
-              state={{ professional_id: professionalId }}
+              state={{ professional_id: pid }}
               style={{
                 border: "1px solid #eee",
                 padding: 12,
@@ -115,13 +86,6 @@ export default function Messages() {
             >
               <div style={{ fontWeight: 700 }}>{title}</div>
               {last && <div style={{ opacity: 0.8, marginTop: 6 }}>{last}</div>}
-
-              {showWarning && (
-                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>
-                  (Aviso: não consegui identificar o professional_id desta conversa. Se falhar ao
-                  enviar, abra a conversa pelo perfil do profissional uma vez para “registrar” o vínculo.)
-                </div>
-              )}
             </Link>
           );
         })}
