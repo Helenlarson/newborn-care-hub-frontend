@@ -11,12 +11,12 @@ export default function Topbar() {
   };
 
   const roleLabel =
-    role === "professional" ? "Profissional" : role === "family" ? "Familiar" : "";
+    role === "professional" ? "Professional" : role === "family" ? "Family" : "";
 
   return (
     <div style={styles.bar}>
       <Link to="/professionals" style={styles.logo}>
-        LeliConect
+        Newborn Care Hub
       </Link>
 
       <div style={styles.right}>
@@ -26,15 +26,15 @@ export default function Topbar() {
         </span>
 
         <Link to="/profile/edit" style={styles.link}>
-          Editar perfil
+          Edit Profile
         </Link>
 
         <Link to="/inbox" style={styles.link}>
-          Mensagens
+          Messages
         </Link>
 
         <button onClick={handleLogout} style={styles.btn}>
-          Sair
+          Logout
         </button>
       </div>
     </div>

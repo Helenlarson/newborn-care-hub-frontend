@@ -9,6 +9,9 @@ import EditProfile from "../pages/EditProfile";
 import Conversation from "../pages/Conversation";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Topbar from "../components/Topbar";
+import Blog from "../pages/Blog";
+import BlogPost from "../pages/BlogPost";
+
 
 function ProtectedPage({ children }) {
   return (
@@ -70,6 +73,8 @@ export default function AppRoutes() {
           </ProtectedPage>
         }
       />
+      <Route path="/blog" element={<Blog />} />
+      <Route path="/blog/:slug" element={<BlogPost />} />
     </Routes>
   );
 }

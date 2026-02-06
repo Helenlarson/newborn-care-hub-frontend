@@ -1,34 +1,191 @@
-import { Link } from "react-router-dom";
+import heroImg from "../assets/hero.jpg";
+import { Link as RouterLink } from "react-router-dom";
+import {
+  Box,
+  Container,
+  Flex,
+  HStack,
+  Button,
+  Spacer,
+  Text,
+  Heading,
+  Stack,
+  Image,
+} from "@chakra-ui/react";
 
 export default function Home() {
+  // 🎨 Paleta suave (maternidade / cuidado)
+  const NAV_BG = "#f5e6d8";          // bege areia (navbar)
+  const PAGE_BG = "#eeccb3";         // off-white geral
+  const HERO_BG = "#eeccb3";         // fundo sólido do hero (Opção A)
+
+  const INK = "#2F3A45";             // charcoal suave
+  const MUTED = "#5F6C78";           // texto secundário
+  const BORDER = "rgba(47,58,69,0.18)";
+
+  const TERRACOTTA = "#B88975";      // botão principal
+  const TERRACOTTA_DARK = "#A97561"; // hover
+  const TERRACOTTA_TEXT = "#B07B67"; // outline
+
   return (
-    <div style={{ maxWidth: 900, margin: "40px auto", padding: 16 }}>
-      <h1>LeliConect</h1>
+    <Box minH="100vh" bg={PAGE_BG} color={INK}>
+      {/* NAVBAR */}
+      <Box bg={NAV_BG} borderBottom="1px solid" borderColor={BORDER}>
+        <Container maxW="1100px" py={4}>
+          <Flex align="center">
+            {/* Logo */}
+            <HStack spacing={3}>
+              <Text fontWeight="600" fontSize="lg">
+                Newborn Care Hub
+              </Text>
+            </HStack>
 
-      <p>
-        Plataforma para conectar familiares a profissionais. Busque profissionais,
-        veja avaliações e troque mensagens com segurança.
-      </p>
+            <Spacer />
 
-      <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap" }}>
-        <Link to="/login" style={btnSecondaryStyle}>Fazer login</Link>
-        <Link to="/signup?role=family" style={btnPrimaryStyle}>Cadastrar como Familiar</Link>
-        <Link to="/signup?role=professional" style={btnPrimaryStyle}>Cadastrar como Profissional</Link>
-      </div>
-    </div>
+            {/* Links */}
+            <HStack
+              spacing={7}
+              fontSize="sm"
+              color={INK}
+              display={{ base: "none", md: "flex" }}
+              opacity={0.85}
+            >
+              <Box as={RouterLink} to="/" _hover={{ opacity: 1 }}>
+                Home
+              </Box>
+              <Box as={RouterLink} to="/about" _hover={{ opacity: 1 }}>
+                About
+              </Box>
+              <Box as={RouterLink} to="/blog" _hover={{ opacity: 1 }}>
+                Blog
+              </Box>
+              <Box as={RouterLink} to="/how-it-works" _hover={{ opacity: 1 }}>
+                How It Works
+              </Box>
+              <Box as={RouterLink} to="/faq" _hover={{ opacity: 1 }}>
+                FAQ
+              </Box>
+            </HStack>
+
+            <Spacer />
+
+            {/* Auth */}
+            <HStack spacing={3}>
+              <Button
+                as={RouterLink}
+                to="/login"
+                size="sm"
+                variant="outline"
+                borderColor={INK}
+                color={INK}
+                borderRadius="12px"
+                _hover={{ bg: "rgba(255,255,255,0.55)" }}
+              >
+                Sign In
+              </Button>
+
+              <Button
+                as={RouterLink}
+                to="/signup?role=family"
+                size="sm"
+                bg={TERRACOTTA}
+                color="white"
+                borderRadius="12px"
+                _hover={{ bg: TERRACOTTA_DARK }}
+              >
+                Sign Up
+              </Button>
+            </HStack>
+          </Flex>
+        </Container>
+      </Box>
+
+      {/* HERO — Opção A: fundo sólido */}
+      <Box bg={HERO_BG} pt={{ base: 14, md: 18 }} pb={{ base: 18, md: 26 }}>
+        <Container maxW="1100px">
+          <Stack spacing={7} align="center" textAlign="center">
+            {/* TÍTULO – mais leve e delicado */}
+            <Heading
+              as="h1"
+              fontWeight="600"
+              letterSpacing="-0.4px"
+              lineHeight="1.15"
+              fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
+              maxW="900px"
+              color={INK}
+            >
+              Connecting families to birth and postpartum care professionals,
+              all in one place.
+            </Heading>
+
+            {/* Subtítulo */}
+            <Text
+              fontSize={{ base: "md", md: "lg" }}
+              color={MUTED}
+              maxW="760px"
+              lineHeight="1.7"
+            >
+              Find and schedule trusted professionals in pediatrics, nursing,
+              doulas and much more — all in one place, to support your family
+              at every stage.
+            </Text>
+
+            {/* CTAs */}
+            <HStack spacing={4} pt={2} flexWrap="wrap" justify="center">
+              <Button
+                as={RouterLink}
+                to="/professionals"
+                bg={TERRACOTTA}
+                color="white"
+                _hover={{ bg: TERRACOTTA_DARK }}
+                borderRadius="12px"
+                px={8}
+                h="44px"
+                boxShadow="0 10px 22px rgba(0,0,0,0.10)"
+              >
+                Find Professionals
+              </Button>
+
+              <Button
+                as={RouterLink}
+                to="/signup?role=family"
+                bg="rgba(255,255,255,0.6)"
+                border="1px solid"
+                borderColor={TERRACOTTA_TEXT}
+                color={TERRACOTTA_TEXT}
+                _hover={{ bg: "rgba(255,255,255,0.8)" }}
+                borderRadius="12px"
+                px={8}
+                h="44px"
+              >
+                Sign Up for Free
+              </Button>
+            </HStack>
+
+            {/* IMAGEM HERO */}
+            <Box pt={{ base: 6, md: 8 }} w="100%" display="flex" justifyContent="center">
+              <Box
+                w={{ base: "100%", md: "760px" }}
+                borderRadius="18px"
+                overflow="hidden"
+                boxShadow="0 18px 45px rgba(0,0,0,0.16)"
+                border="1px solid"
+                borderColor="rgba(255,255,255,0.55)"
+                bg="rgba(255,255,255,0.20)"
+              >
+                <Image
+                  src={heroImg}
+                  alt="Family and provider support"
+                  w="100%"
+                  h={{ base: "240px", md: "360px" }}
+                  objectFit="cover"
+                  objectPosition="center"
+                />
+              </Box>
+            </Box>
+          </Stack>
+        </Container>
+      </Box>
+    </Box>
   );
 }
-
-const btnPrimaryStyle = {
-  padding: "10px 16px",
-  border: "1px solid #111",
-  textDecoration: "none",
-  color: "#111",
-  borderRadius: 8,
-};
-
-const btnSecondaryStyle = {
-  ...btnPrimaryStyle,
-  background: "#111",
-  color: "white",
-};
