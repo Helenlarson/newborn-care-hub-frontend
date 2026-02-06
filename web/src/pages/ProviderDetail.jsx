@@ -62,7 +62,7 @@ export default function ProviderDetail() {
       const data = err?.response?.data;
       setError(
         data?.detail ||
-          (data ? JSON.stringify(data, null, 2) : "Não foi possível carregar o profissional.")
+          (data ? JSON.stringify(data, null, 2) : "Unable to load provider details.")
       );
     } finally {
       setLoading(false);
@@ -95,7 +95,7 @@ export default function ProviderDetail() {
       const data = err?.response?.data;
       alert(
         data?.detail ||
-          (data ? JSON.stringify(data, null, 2) : "Não foi possível enviar o review.")
+          (data ? JSON.stringify(data, null, 2) : "Unable to send review.")
       );
     } finally {
       setSavingReview(false);
@@ -156,24 +156,24 @@ export default function ProviderDetail() {
         // navega já levando o professional_id no state
         nav(`/conversations/${convId}`, { state: { professional_id: providerIdNum } });
       } else {
-        alert("Mensagem enviada, mas não veio conversation_id na resposta.");
+        alert("Message sent, but no conversation_id was returned in the response.");
       }
     } catch (err) {
       const data = err?.response?.data;
       alert(
         data?.detail ||
-          (data ? JSON.stringify(data, null, 2) : "Não foi possível iniciar a conversa.")
+          (data ? JSON.stringify(data, null, 2) : "Unable to start the conversation.")
       );
     } finally {
       setSendingMsg(false);
     }
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Carregando...</div>;
+  if (loading) return <div style={{ padding: 16 }}>loading...</div>;
   if (error) return <div style={{ padding: 16, color: "crimson", whiteSpace: "pre-wrap" }}>{error}</div>;
   if (!provider) return null;
 
-  const name = pickFirst(provider, ["display_name", "full_name"], "Profissional");
+  const name = pickFirst(provider, ["display_name", "full_name"], "Professional");
   const title = pickFirst(provider, ["headline", "role_title"], "");
   const bio = pickFirst(provider, ["bio"], "");
   const city = pickFirst(provider, ["city", "location_city"], "");
@@ -188,7 +188,7 @@ export default function ProviderDetail() {
         {photo ? (
           <img
             src={photo}
-            alt="Foto do profissional"
+            alt="Photo of the professional"
             style={{
               width: 72,
               height: 72,
@@ -209,7 +209,7 @@ export default function ProviderDetail() {
               opacity: 0.6,
             }}
           >
-            sem foto
+            no image
           </div>
         )}
 
@@ -221,7 +221,7 @@ export default function ProviderDetail() {
           </div>
           {services && (
             <div style={{ fontSize: 13, marginTop: 6 }}>
-              <strong>Serviços:</strong> {services}
+              <strong>Services:</strong> {services}
             </div>
           )}
         </div>
@@ -246,14 +246,14 @@ export default function ProviderDetail() {
             </div>
           </div>
         ))}
-        {reviews.length === 0 && <div>Nenhum review ainda.</div>}
+        {reviews.length === 0 && <div>No reviews yet.</div>}
       </div>
 
       {role === "family" && (
         <>
           <hr style={{ margin: "24px 0" }} />
 
-          <h3>Adicionar review</h3>
+          <h3>Add review</h3>
           <form
             onSubmit={submitReview}
             style={{ display: "grid", gap: 10, maxWidth: 520 }}
@@ -270,33 +270,33 @@ export default function ProviderDetail() {
             </label>
 
             <textarea
-              placeholder="Escreva sua avaliação..."
+              placeholder="Write your review..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}
             />
 
             <button disabled={savingReview || !comment.trim()} type="submit">
-              {savingReview ? "Enviando..." : "Enviar review"}
+              {savingReview ? "Sending..." : "Send review"}
             </button>
           </form>
 
           <hr style={{ margin: "24px 0" }} />
 
-          <h3>Iniciar conversa</h3>
+          <h3>Start conversation</h3>
           <form
             onSubmit={startConversation}
             style={{ display: "grid", gap: 10, maxWidth: 520 }}
           >
             <textarea
-              placeholder="Escreva sua primeira mensagem..."
+              placeholder="Write your first message..."
               value={firstMessage}
               onChange={(e) => setFirstMessage(e.target.value)}
               rows={3}
             />
 
             <button disabled={sendingMsg || !firstMessage.trim()} type="submit">
-              {sendingMsg ? "Enviando..." : "Enviar mensagem"}
+              {sendingMsg ? "Sending..." : "Send message"}
             </button>
           </form>
         </>

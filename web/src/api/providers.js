@@ -11,11 +11,9 @@ function serializeParams(params) {
 }
 
 export async function apiListProviders(params) {
-  // backend: /api/professionals/
-  // tenta mandar tanto "q" quanto "search" para facilitar compat com o backend
   const merged = {
     ...params,
-    search: params?.q || params?.search,
+    search: params?.search ?? params?.q ?? undefined,
   };
 
   const query = serializeParams(merged);

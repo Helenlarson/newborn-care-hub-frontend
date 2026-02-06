@@ -24,7 +24,7 @@ function formatServices(p) {
 }
 
 export default function ProviderCard({ provider }) {
-  const name = getField(provider, ["display_name", "full_name"], "Profissional");
+  const name = getField(provider, ["display_name", "full_name"], "Professional");
   const headline = getField(provider, ["headline", "role_title"], "");
   const city = getField(provider, ["city", "location_city"], "");
   const state = getField(provider, ["state", "location_state"], "");
@@ -62,7 +62,7 @@ export default function ProviderCard({ provider }) {
               fontSize: 12,
             }}
           >
-            sem foto
+            no image
           </div>
         )}
 
@@ -74,7 +74,7 @@ export default function ProviderCard({ provider }) {
           </div>
           {services && (
             <div style={{ fontSize: 13, marginTop: 6 }}>
-              <strong>Serviços:</strong> {services}
+              <strong>Services:</strong> {services}
             </div>
           )}
         </div>

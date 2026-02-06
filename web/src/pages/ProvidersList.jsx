@@ -26,13 +26,18 @@ export default function ProvidersList() {
         zipcode: filters.zipcode || undefined,
         city: filters.city || undefined,
         state: filters.state || undefined,
-        service_types: (filters.service_type_ids || []).length ? filters.service_type_ids : undefined,
+
+        // ✅ IMPORTANT: send the correct param name
+        service_type_ids:
+          (filters.service_type_ids || []).length > 0
+            ? filters.service_type_ids
+            : undefined,
       };
 
       const data = await apiListProviders(params);
       setProviders(data.results || data);
     } catch (err) {
-      setError(err?.response?.data?.detail || "Não foi possível carregar profissionais.");
+      setError(err?.response?.data?.detail || "Unable to load professionals.");
     } finally {
       setLoading(false);
     }
@@ -45,11 +50,15 @@ export default function ProvidersList() {
 
   return (
     <div style={{ maxWidth: 900, margin: "24px auto", padding: 16 }}>
-      <h2>Profissionais</h2>
+      <h2>Professionals</h2>
 
-      <SearchFilters filters={filters} setFilters={setFilters} onSearch={fetchProviders} />
+      <SearchFilters
+        filters={filters}
+        setFilters={setFilters}
+        onSearch={fetchProviders}
+      />
 
-      {loading && <div>Carregando...</div>}
+      {loading && <div>Loading...</div>}
       {error && <div style={{ color: "crimson" }}>{error}</div>}
 
       <div style={{ display: "grid", gap: 12 }}>
