@@ -14,21 +14,21 @@ import {
 } from "@chakra-ui/react";
 
 export default function Home() {
-  // 🎨 Paleta suave (maternidade / cuidado)
-  const NAV_BG = "#f5e6d8";          // bege areia (navbar)
-  const PAGE_BG = "#eeccb3";         // off-white geral
-  const HERO_BG = "#eeccb3";         // fundo sólido do hero (Opção A)
+  // 🎨 Paleta suave (igual Signup)
+  const PAGE_GRADIENT =
+    "linear-gradient(90deg, #F2C9A9 0%, #F7E6D6 45%, #BFE3CF 100%)";
 
-  const INK = "#2F3A45";             // charcoal suave
-  const MUTED = "#5F6C78";           // texto secundário
+  const NAV_BG = "#f5e6d8"; // navbar
+  const INK = "#2F3A45";
+  const MUTED = "#5F6C78";
   const BORDER = "rgba(47,58,69,0.18)";
 
-  const TERRACOTTA = "#B88975";      // botão principal
-  const TERRACOTTA_DARK = "#A97561"; // hover
-  const TERRACOTTA_TEXT = "#B07B67"; // outline
+  const TERRACOTTA = "#B88975";
+  const TERRACOTTA_DARK = "#A97561";
+  const TERRACOTTA_TEXT = "#B07B67";
 
   return (
-    <Box minH="100vh" bg={PAGE_BG} color={INK}>
+    <Box minH="100vh" bgGradient={PAGE_GRADIENT} color={INK}>
       {/* NAVBAR */}
       <Box bg={NAV_BG} borderBottom="1px solid" borderColor={BORDER}>
         <Container maxW="1100px" py={4}>
@@ -100,11 +100,11 @@ export default function Home() {
         </Container>
       </Box>
 
-      {/* HERO — Opção A: fundo sólido */}
-      <Box bg={HERO_BG} pt={{ base: 14, md: 18 }} pb={{ base: 18, md: 26 }}>
+      {/* HERO */}
+      <Box pt={{ base: 14, md: 18 }} pb={{ base: 18, md: 26 }}>
         <Container maxW="1100px">
           <Stack spacing={7} align="center" textAlign="center">
-            {/* TÍTULO – mais leve e delicado */}
+            {/* Title */}
             <Heading
               as="h1"
               fontWeight="600"
@@ -112,13 +112,12 @@ export default function Home() {
               lineHeight="1.15"
               fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
               maxW="900px"
-              color={INK}
             >
               Connecting families to birth and postpartum care professionals,
               all in one place.
             </Heading>
 
-            {/* Subtítulo */}
+            {/* Subtitle */}
             <Text
               fontSize={{ base: "md", md: "lg" }}
               color={MUTED}
@@ -162,7 +161,7 @@ export default function Home() {
               </Button>
             </HStack>
 
-            {/* IMAGEM HERO */}
+            {/* Hero Image */}
             <Box pt={{ base: 6, md: 8 }} w="100%" display="flex" justifyContent="center">
               <Box
                 w={{ base: "100%", md: "760px" }}
@@ -179,7 +178,6 @@ export default function Home() {
                   w="100%"
                   h={{ base: "240px", md: "360px" }}
                   objectFit="cover"
-                  objectPosition="center"
                 />
               </Box>
             </Box>
