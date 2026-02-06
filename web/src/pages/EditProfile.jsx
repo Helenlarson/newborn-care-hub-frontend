@@ -6,34 +6,51 @@ function isProviderRole(role) {
   return role === "provider" || role === "professional";
 }
 
+// ✅ aplica transformação na URL (não no upload)
+function buildAvatarUrl(originalUrl) {
+  if (!originalUrl) return "";
+  // Evita duplicar transformação se já tiver
+  if (originalUrl.includes("/upload/c_fill")) return originalUrl;
+
+  // Insere transformação logo após "/upload/"
+  return originalUrl.replace(
+    "/upload/",
+    "/upload/c_fill,g_face,w_256,h_256,q_auto,f_auto/"
+  );
+}
+
 async function uploadToCloudinary(file) {
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
   if (!cloudName || !uploadPreset) {
     throw new Error(
-      "Cloudinary não configurado. Defina VITE_CLOUDINARY_CLOUD_NAME e VITE_CLOUDINARY_UPLOAD_PRESET."
+      "Cloudinary not configured. Please set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET."
     );
   }
 
   const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
   const form = new FormData();
   form.append("file", file);
   form.append("upload_preset", uploadPreset);
 
-  // opcional: se não colocou a pasta no preset
-  // form.append("folder", "leliconect/avatars");
+  // ✅ permitido no unsigned
+  form.append("folder", "leliconect/avatars");
 
-  // opcional: transforma para avatar (leve e padronizado)
-  form.append("transformation", "c_fill,g_face,w_256,h_256,q_auto,f_auto");
+  // ❌ NÃO pode em unsigned:
+  // form.append("transformation", "c_fill,g_face,w_256,h_256,q_auto,f_auto");
 
   const res = await fetch(url, { method: "POST", body: form });
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data?.error?.message || "Falha ao enviar imagem para Cloudinary.");
+    throw new Error(
+      data?.error?.message || "Failed to upload image to Cloudinary."
+    );
   }
 
+  // Retorna a URL original (sem transformação no upload)
   return data.secure_url;
 }
 
@@ -49,12 +66,12 @@ export default function EditProfile() {
   // fields
   const [displayName, setDisplayName] = useState("");
   const [headline, setHeadline] = useState(""); // provider
-  const [serviceTypesText, setServiceTypesText] = useState(""); // provider: "doula, nanny"
+  const [serviceTypesText, setServiceTypesText] = useState(""); // provider
   const [city, setCity] = useState("");
   const [stateUF, setStateUF] = useState("");
   const [zipcode, setZipcode] = useState("");
   const [bio, setBio] = useState(""); // provider
-  const [photo, setPhoto] = useState(""); // URL
+  const [photo, setPhoto] = useState(""); // URL (original)
 
   // foto UI
   const [photoPreview, setPhotoPreview] = useState("");
@@ -78,8 +95,12 @@ export default function EditProfile() {
         setStateUF(profile?.state || "");
         setZipcode(profile?.zipcode || "");
         setBio(profile?.bio || "");
-        setPhoto(profile?.photo || "");
-        setPhotoPreview(profile?.photo || "");
+
+        const photoUrl = profile?.photo || "";
+        setPhoto(photoUrl);
+
+        // ✅ preview com transformação na URL
+        setPhotoPreview(buildAvatarUrl(photoUrl));
 
         const st = profile?.service_types;
         setServiceTypesText(Array.isArray(st) ? st.join(", ") : "");
@@ -87,7 +108,7 @@ export default function EditProfile() {
         const data = err?.response?.data;
         setError(
           data?.detail ||
-            (data ? JSON.stringify(data, null, 2) : "Não foi possível carregar seu perfil.")
+            (data ? JSON.stringify(data, null, 2) : "Unable to load your profile.")
         );
       } finally {
         setLoading(false);
@@ -113,22 +134,19 @@ export default function EditProfile() {
     setSuccess("");
 
     try {
-      const url = await uploadToCloudinary(file);
+      const originalUrl = await uploadToCloudinary(file);
 
-      // seu backend limita 200 caracteres; Cloudinary costuma caber
-      if (url.length > 200) {
-        alert(
-          "A URL gerada ficou maior que 200 caracteres. Seu backend limita photo a 200. " +
-            "Se acontecer, considere aumentar max_length no backend."
-        );
-      }
+      // ✅ salva a URL "crua" no backend
+      setPhoto(originalUrl);
 
-      setPhoto(url);
-      setPhotoPreview(url);
-      setSuccess("Foto enviada com sucesso. Clique em “Salvar alterações” para aplicar no perfil.");
+      // ✅ exibe versão avatar no preview
+      setPhotoPreview(buildAvatarUrl(originalUrl));
+
+      setSuccess("Photo uploaded successfully. Click \"Save changes\" to apply it to your profile.");
     } catch (err) {
-      alert(err?.message || "Falha ao enviar imagem.");
-      setPhotoPreview(photo || "");
+      alert(err?.message || "Failed to upload image.");
+      // volta para a foto anterior (com transformação)
+      setPhotoPreview(buildAvatarUrl(photo || ""));
     } finally {
       setPhotoUploading(false);
       try {
@@ -153,7 +171,10 @@ export default function EditProfile() {
       city: city.trim(),
       state: stateUF.trim(),
       zipcode: zipcode.trim(),
+
+      // ✅ manda a URL original (sem transformação)
       photo: photo || "",
+
       ...(isProvider
         ? {
             headline: headline.trim(),
@@ -165,12 +186,8 @@ export default function EditProfile() {
 
     try {
       await apiUpdateMyProfile(role, profilePayload);
-
-      // ✅ sem redirect: apenas feedback
-      setSuccess("Alterações salvas com sucesso!");
-      // opcional: esconder automaticamente depois de alguns segundos
+      setSuccess("Changes saved successfully!");
       setTimeout(() => setSuccess(""), 3500);
-      // opcional: rolar para cima para ver a mensagem
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       const data = err?.response?.data;
@@ -226,7 +243,7 @@ export default function EditProfile() {
             />
 
             <input
-              placeholder='Service types (ex: "doula, nanny")'
+              placeholder='Service types (ex: "doula, newborn care specialist")'
               value={serviceTypesText}
               onChange={(e) => setServiceTypesText(e.target.value)}
             />
@@ -241,19 +258,19 @@ export default function EditProfile() {
         )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
-          <input placeholder="Estado" value={stateUF} onChange={(e) => setStateUF(e.target.value)} />
+          <input placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
+          <input placeholder="State" value={stateUF} onChange={(e) => setStateUF(e.target.value)} />
         </div>
 
         <input placeholder="Zipcode" value={zipcode} onChange={(e) => setZipcode(e.target.value)} />
 
         <div style={{ display: "grid", gap: 8 }}>
-          <label style={{ fontWeight: 600 }}>Foto de perfil</label>
+          <label style={{ fontWeight: 600 }}>Profile photo</label>
 
           {photoPreview ? (
             <img
               src={photoPreview}
-              alt="Pré-visualização"
+              alt="Preview"
               style={{
                 width: 96,
                 height: 96,
@@ -274,16 +291,16 @@ export default function EditProfile() {
                 opacity: 0.6,
               }}
             >
-              sem foto
+              no photo
             </div>
           )}
 
           <input type="file" accept="image/*" onChange={onPickPhoto} disabled={photoUploading} />
-          {photoUploading && <div style={{ fontSize: 13, opacity: 0.7 }}>Enviando foto...</div>}
+          {photoUploading && <div style={{ fontSize: 13, opacity: 0.7 }}>Uploading photo...</div>}
         </div>
 
         <button type="submit" disabled={saving || photoUploading || !displayName.trim()}>
-          {saving ? "Salvando..." : "Salvar alterações"}
+          {saving ? "Saving..." : "Save changes"}
         </button>
       </form>
     </div>
