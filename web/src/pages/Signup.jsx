@@ -479,7 +479,7 @@ export default function Signup() {
       <div style={shell}>
         <div style={card}>
           <h1 style={title}>Sign Up for Newborn Care Hub</h1>
-          <p style={subtitle}>Connect with our maternal-child care community</p>
+          <p style={subtitle}>Find the professional support your family needs</p>
 
           <form onSubmit={handleSubmit}>
             {/* ROLE */}
@@ -510,7 +510,7 @@ export default function Signup() {
                 <div>
                   <div style={{ fontWeight: 700 }}>Professional</div>
                   <div style={{ fontSize: 12, color: COLORS.muted }}>
-                    Offering specialized services
+                    Expand your practice and connect with more families
                   </div>
                 </div>
               </div>
@@ -524,7 +524,7 @@ export default function Signup() {
                   style={input}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Your full name"
+                  placeholder="First and Last name"
                 />
               </div>
 
@@ -751,7 +751,7 @@ export default function Signup() {
                         </div>
                       )}
 
-                      <div style={helpText}>Saved locally for now (no backend changes).</div>
+                      <div style={helpText}>Saved locally for now.</div>
                     </div>
                   </div>
                 </div>
