@@ -103,6 +103,15 @@ function isDataUrlPhoto(s) {
   return typeof s === "string" && s.startsWith("data:image/");
 }
 
+/** ✅ Title Case + normalize spaces */
+function toTitleCase(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+}
+
 export default function Signup() {
   const navigate = useNavigate();
   const [sp] = useSearchParams();
@@ -576,7 +585,10 @@ export default function Signup() {
                 <input
                   style={input}
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => {
+                    const noNumbers = e.target.value.replace(/[0-9]/g, "");
+                    setCity(toTitleCase(noNumbers));
+                  }}
                   placeholder="City"
                 />
               </div>
