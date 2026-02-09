@@ -1,4 +1,5 @@
 import heroImg from "../assets/hero.jpg";
+import logo from "../assets/newbornHublogo.svg";
 import { Link as RouterLink } from "react-router-dom";
 import {
   Box,
@@ -14,11 +15,11 @@ import {
 } from "@chakra-ui/react";
 
 export default function Home() {
-  // 🎨 Paleta suave (igual Signup)
+  // 🎨 Paleta suave
   const PAGE_GRADIENT =
     "linear-gradient(90deg, #F2C9A9 0%, #F7E6D6 45%, #BFE3CF 100%)";
 
-  const NAV_BG = "#f5e6d8"; // navbar
+  const NAV_BG = "#f5e6d8";
   const INK = "#2F3A45";
   const MUTED = "#5F6C78";
   const BORDER = "rgba(47,58,69,0.18)";
@@ -29,32 +30,57 @@ export default function Home() {
 
   return (
     <Box minH="100vh" bgGradient={PAGE_GRADIENT} color={INK}>
-      {/* NAVBAR */}
+      {/* ================= NAVBAR ================= */}
       <Box bg={NAV_BG} borderBottom="1px solid" borderColor={BORDER}>
         <Container maxW="1100px" py={4}>
           <Flex align="center">
             {/* Logo */}
             <HStack spacing={3}>
-              <Text fontWeight="600" fontSize="lg">
-                Newborn Care Hub
-              </Text>
+              <RouterLink to="/">
+                <img
+                  src={logo}
+                  alt="Newborn Care Hub logo"
+                  style={{
+                    height: "60px",
+                    width: "auto",
+                    display: "block",
+                  }}
+                />
+              </RouterLink>
             </HStack>
 
             <Spacer />
 
-            {/* Links (ONLY Home + Blog) */}
+            {/* Links (underline only on hover) */}
             <HStack
               spacing={7}
-              fontSize="sm"
+              fontSize="lg"
+              fontWeight="500"
               color={INK}
               display={{ base: "none", md: "flex" }}
               opacity={0.85}
             >
-              <Box as={RouterLink} to="/" _hover={{ opacity: 1 }}>
+              <Box
+                as={RouterLink}
+                to="/"
+                _hover={{
+                  opacity: 1,
+                  textDecoration: "underline",
+                  textUnderlineOffset: "6px",
+                }}
+              >
                 Home
               </Box>
 
-              <Box as={RouterLink} to="/blog" _hover={{ opacity: 1 }}>
+              <Box
+                as={RouterLink}
+                to="/blog"
+                _hover={{
+                  opacity: 1,
+                  textDecoration: "underline",
+                  textUnderlineOffset: "6px",
+                }}
+              >
                 Blog
               </Box>
             </HStack>
@@ -92,11 +118,10 @@ export default function Home() {
         </Container>
       </Box>
 
-      {/* HERO */}
+      {/* ================= HERO ================= */}
       <Box pt={{ base: 14, md: 18 }} pb={{ base: 18, md: 26 }}>
         <Container maxW="1100px">
           <Stack spacing={7} align="center" textAlign="center">
-            {/* Title */}
             <Heading
               as="h1"
               fontWeight="600"
@@ -109,17 +134,19 @@ export default function Home() {
               all in one place.
             </Heading>
 
-            {/* Subtitle */}
             <Text
               fontSize={{ base: "md", md: "lg" }}
               color={MUTED}
               maxW="760px"
               lineHeight="1.7"
             >
-              Connecting families and healthcare professionals in a network of care, support and growth during the journey of motherhood and child development. Enter your ZIP code or city to explore professionals in your area.
+ >
+              Connecting families and healthcare professionals in a network of
+              care, support and growth during the journey of motherhood and child
+              development. Enter your ZIP code or city to explore professionals
+              in your area.
             </Text>
 
-            {/* CTAs */}
             <HStack spacing={4} pt={2} flexWrap="wrap" justify="center">
               <Button
                 as={RouterLink}
@@ -151,7 +178,6 @@ export default function Home() {
               </Button>
             </HStack>
 
-            {/* Hero Image */}
             <Box
               pt={{ base: 6, md: 8 }}
               w="100%"
@@ -175,6 +201,30 @@ export default function Home() {
                   objectFit="cover"
                 />
               </Box>
+            </Box>
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* ================= FOOTER ================= */}
+      <Box bg="white" borderTop="1px solid" borderColor={BORDER}>
+        <Container maxW="1100px" py={6}>
+          <Stack
+            direction={{ base: "column", md: "row" }}
+            spacing={6}
+            justify="space-between"
+            align={{ base: "flex-start", md: "center" }}
+          >
+            <Box>
+              <Text fontSize="sm" color={MUTED}>
+                📧 newbornhub2026@gmail.com
+              </Text>
+            </Box>
+
+            <Box textAlign={{ base: "left", md: "right" }}>
+              <Text fontSize="sm" color={MUTED}>
+                © 2026 Newborn Care Hub. All rights reserved.
+              </Text>
             </Box>
           </Stack>
         </Container>
