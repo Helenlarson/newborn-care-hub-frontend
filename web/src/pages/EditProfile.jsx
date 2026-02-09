@@ -9,10 +9,8 @@ function isProviderRole(role) {
 // ✅ aplica transformação na URL (não no upload)
 function buildAvatarUrl(originalUrl) {
   if (!originalUrl) return "";
-  // Evita duplicar transformação se já tiver
   if (originalUrl.includes("/upload/c_fill")) return originalUrl;
 
-  // Insere transformação logo após "/upload/"
   return originalUrl.replace(
     "/upload/",
     "/upload/c_fill,g_face,w_256,h_256,q_auto,f_auto/"
@@ -35,11 +33,8 @@ async function uploadToCloudinary(file) {
   form.append("file", file);
   form.append("upload_preset", uploadPreset);
 
-  // ✅ permitido no unsigned
+  // ✅ allowed in unsigned upload
   form.append("folder", "leliconect/avatars");
-
-  // ❌ NÃO pode em unsigned:
-  // form.append("transformation", "c_fill,g_face,w_256,h_256,q_auto,f_auto");
 
   const res = await fetch(url, { method: "POST", body: form });
   const data = await res.json();
@@ -50,8 +45,7 @@ async function uploadToCloudinary(file) {
     );
   }
 
-  // Retorna a URL original (sem transformação no upload)
-  return data.secure_url;
+  return data.secure_url; // original URL (no transform)
 }
 
 export default function EditProfile() {
@@ -71,9 +65,9 @@ export default function EditProfile() {
   const [stateUF, setStateUF] = useState("");
   const [zipcode, setZipcode] = useState("");
   const [bio, setBio] = useState(""); // provider
-  const [photo, setPhoto] = useState(""); // URL (original)
+  const [photo, setPhoto] = useState(""); // original URL
 
-  // foto UI
+  // photo UI
   const [photoPreview, setPhotoPreview] = useState("");
   const [photoUploading, setPhotoUploading] = useState(false);
 
@@ -98,8 +92,6 @@ export default function EditProfile() {
 
         const photoUrl = profile?.photo || "";
         setPhoto(photoUrl);
-
-        // ✅ preview com transformação na URL
         setPhotoPreview(buildAvatarUrl(photoUrl));
 
         const st = profile?.service_types;
@@ -122,7 +114,7 @@ export default function EditProfile() {
 
     const maxMb = 2;
     if (file.size > maxMb * 1024 * 1024) {
-      alert(`Arquivo muito grande. Use até ${maxMb}MB.`);
+      setError(`Image is too large. Please choose a file under ${maxMb}MB.`);
       return;
     }
 
@@ -136,16 +128,12 @@ export default function EditProfile() {
     try {
       const originalUrl = await uploadToCloudinary(file);
 
-      // ✅ salva a URL "crua" no backend
-      setPhoto(originalUrl);
+      setPhoto(originalUrl); // save original url
+      setPhotoPreview(buildAvatarUrl(originalUrl)); // show transformed preview
 
-      // ✅ exibe versão avatar no preview
-      setPhotoPreview(buildAvatarUrl(originalUrl));
-
-      setSuccess("Photo uploaded successfully. Click \"Save changes\" to apply it to your profile.");
+      setSuccess('Photo uploaded. Click "Save changes" to apply it to your profile.');
     } catch (err) {
-      alert(err?.message || "Failed to upload image.");
-      // volta para a foto anterior (com transformação)
+      setError(err?.message || "Failed to upload image.");
       setPhotoPreview(buildAvatarUrl(photo || ""));
     } finally {
       setPhotoUploading(false);
@@ -171,10 +159,7 @@ export default function EditProfile() {
       city: city.trim(),
       state: stateUF.trim(),
       zipcode: zipcode.trim(),
-
-      // ✅ manda a URL original (sem transformação)
       photo: photo || "",
-
       ...(isProvider
         ? {
             headline: headline.trim(),
@@ -192,117 +177,326 @@ export default function EditProfile() {
     } catch (err) {
       const data = err?.response?.data;
       setError(
-        data?.detail || (data ? JSON.stringify(data, null, 2) : "Não foi possível salvar.")
+        data?.detail || (data ? JSON.stringify(data, null, 2) : "Unable to save changes.")
       );
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Carregando perfil...</div>;
+  // =========================
+  // STYLE (match Signup.jsx)
+  // =========================
+  const COLORS = {
+    pageLeft: "#F2C9A9",
+    pageMid: "#F7E6D6",
+    pageRight: "#BFE3CF",
+    card: "#FBF6EE",
+    border: "rgba(40, 30, 25, 0.12)",
+    text: "#2B2B2B",
+    muted: "rgba(43, 43, 43, 0.62)",
+    terracotta: "#B97A63",
+    creamInput: "#F6EFE6",
+    white: "#FFFFFF",
+    successBg: "rgba(236, 253, 243, 0.85)",
+    successBorder: "rgba(167, 243, 208, 1)",
+    successText: "#065F46",
+  };
+
+  const page = {
+    minHeight: "100vh",
+    padding: "42px 16px",
+    background: `linear-gradient(90deg, ${COLORS.pageLeft} 0%, ${COLORS.pageMid} 45%, ${COLORS.pageRight} 100%)`,
+    fontFamily:
+      'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"',
+    color: COLORS.text,
+  };
+
+  const shell = {
+    maxWidth: 920,
+    margin: "0 auto",
+    display: "grid",
+    placeItems: "center",
+  };
+
+  const card = {
+    width: "100%",
+    maxWidth: 760,
+    background: COLORS.card,
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: 18,
+    boxShadow: "0 12px 36px rgba(0,0,0,0.10)",
+    padding: "28px 28px 26px",
+  };
+
+  const title = {
+    fontSize: 28,
+    fontWeight: 700,
+    textAlign: "center",
+    margin: "0 0 6px 0",
+  };
+
+  const subtitle = {
+    textAlign: "center",
+    margin: "0 0 24px 0",
+    color: COLORS.muted,
+    fontSize: 14,
+  };
+
+  const label = {
+    fontSize: 13,
+    fontWeight: 600,
+    marginBottom: 6,
+  };
+
+  const input = {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 10,
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.creamInput,
+    outline: "none",
+    fontSize: 14,
+  };
+
+  const row2 = {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 14,
+  };
+
+  const sectionTitle = {
+    fontSize: 16,
+    fontWeight: 700,
+    marginTop: 18,
+    marginBottom: 10,
+  };
+
+  const box = {
+    borderRadius: 14,
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.white,
+    padding: 14,
+  };
+
+  const helpText = { fontSize: 12, color: COLORS.muted, marginTop: 8 };
+
+  const button = (enabled) => ({
+    width: "100%",
+    marginTop: 18,
+    padding: "13px 14px",
+    borderRadius: 12,
+    border: "none",
+    background: enabled ? COLORS.terracotta : "rgba(185,122,99,0.45)",
+    color: "white",
+    fontWeight: 700,
+    fontSize: 15,
+    cursor: enabled ? "pointer" : "not-allowed",
+    boxShadow: enabled ? "0 12px 26px rgba(185,122,99,0.30)" : "none",
+  });
+
+  const smallBtn = {
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.white,
+    cursor: "pointer",
+    fontWeight: 600,
+  };
+
+  const messageBox = (kind) => {
+    const isOk = kind === "success";
+    return {
+      marginTop: 12,
+      marginBottom: 12,
+      borderRadius: 12,
+      padding: 12,
+      background: isOk ? COLORS.successBg : "rgba(254, 242, 242, 0.85)",
+      border: `1px solid ${isOk ? COLORS.successBorder : "rgba(254, 202, 202, 1)"}`,
+      color: isOk ? COLORS.successText : "crimson",
+      fontSize: 13,
+      whiteSpace: "pre-wrap",
+    };
+  };
+
+  const avatarCircle = {
+    width: 92,
+    height: 92,
+    borderRadius: "50%",
+    border: `1px solid ${COLORS.border}`,
+    background: "rgba(0,0,0,0.04)",
+    overflow: "hidden",
+    display: "grid",
+    placeItems: "center",
+  };
+
+  const canSave = !!displayName.trim() && !saving && !photoUploading;
+
+  if (loading) {
+    return (
+      <div style={page}>
+        <div style={shell}>
+          <div style={card}>
+            <h1 style={title}>Edit Profile</h1>
+            <p style={subtitle}>Loading profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: 700, margin: "24px auto", padding: 16 }}>
-      <h2>Editar perfil</h2>
+    <div style={page}>
+      <div style={shell}>
+        <div style={card}>
+          <h1 style={title}>Edit Profile</h1>
+          <p style={subtitle}>Keep your profile updated for families to find you.</p>
 
-      {!!success && (
-        <div
-          style={{
-            background: "#ECFDF3",
-            border: "1px solid #A7F3D0",
-            color: "#065F46",
-            padding: 12,
-            borderRadius: 8,
-            marginTop: 12,
-            marginBottom: 12,
-          }}
-        >
-          {success}
-        </div>
-      )}
+          {!!success && <div style={messageBox("success")}>{success}</div>}
 
-      {!!error && (
-        <pre style={{ color: "crimson", whiteSpace: "pre-wrap", marginTop: 12 }}>
-          {error}
-        </pre>
-      )}
+          {!!error && <div style={messageBox("error")}>{error}</div>}
 
-      <form onSubmit={onSave} style={{ display: "grid", gap: 12, marginTop: 12 }}>
-        <input
-          placeholder="Nome de exibição"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-        />
+          <form onSubmit={onSave}>
+            {/* BASIC INFO */}
+            <div style={row2}>
+              <div>
+                <div style={label}>Display Name</div>
+                <input
+                  style={input}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Your name"
+                />
+              </div>
 
-        {isProvider && (
-          <>
-            <input
-              placeholder="Headline (ex: Doula)"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-            />
-
-            <input
-              placeholder='Service types (ex: "doula, newborn care specialist")'
-              value={serviceTypesText}
-              onChange={(e) => setServiceTypesText(e.target.value)}
-            />
-
-            <textarea
-              placeholder="Bio"
-              rows={4}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-            />
-          </>
-        )}
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <input placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
-          <input placeholder="State" value={stateUF} onChange={(e) => setStateUF(e.target.value)} />
-        </div>
-
-        <input placeholder="Zipcode" value={zipcode} onChange={(e) => setZipcode(e.target.value)} />
-
-        <div style={{ display: "grid", gap: 8 }}>
-          <label style={{ fontWeight: 600 }}>Profile photo</label>
-
-          {photoPreview ? (
-            <img
-              src={photoPreview}
-              alt="Preview"
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 999,
-                objectFit: "cover",
-                border: "1px solid #eee",
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 999,
-                border: "1px solid #eee",
-                display: "grid",
-                placeItems: "center",
-                opacity: 0.6,
-              }}
-            >
-              no photo
+              {isProvider ? (
+                <div>
+                  <div style={label}>Headline</div>
+                  <input
+                    style={input}
+                    value={headline}
+                    onChange={(e) => setHeadline(e.target.value)}
+                    placeholder="e.g., Birth Doula"
+                  />
+                </div>
+              ) : (
+                <div />
+              )}
             </div>
-          )}
 
-          <input type="file" accept="image/*" onChange={onPickPhoto} disabled={photoUploading} />
-          {photoUploading && <div style={{ fontSize: 13, opacity: 0.7 }}>Uploading photo...</div>}
+            {/* PROVIDER DETAILS */}
+            {isProvider && (
+              <>
+                <div style={{ marginTop: 14 }}>
+                  <div style={label}>Service types</div>
+                  <input
+                    style={input}
+                    value={serviceTypesText}
+                    onChange={(e) => setServiceTypesText(e.target.value)}
+                    placeholder='e.g., "birth doula, postpartum doula"'
+                  />
+                  <div style={helpText}>Separate multiple values with commas.</div>
+                </div>
+
+                <div style={{ marginTop: 14 }}>
+                  <div style={label}>Bio</div>
+                  <textarea
+                    style={{ ...input, minHeight: 120, resize: "vertical" }}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Tell families about your experience and approach."
+                  />
+                </div>
+              </>
+            )}
+
+            <div style={{ height: 14 }} />
+
+            {/* LOCATION */}
+            <div style={row2}>
+              <div>
+                <div style={label}>City</div>
+                <input
+                  style={input}
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="City"
+                />
+              </div>
+
+              <div>
+                <div style={label}>State</div>
+                <input
+                  style={input}
+                  value={stateUF}
+                  onChange={(e) => setStateUF(e.target.value)}
+                  placeholder="State (e.g., CO)"
+                />
+              </div>
+            </div>
+
+            <div style={{ height: 14 }} />
+
+            <div>
+              <div style={label}>Zipcode</div>
+              <input
+                style={input}
+                value={zipcode}
+                onChange={(e) => setZipcode(e.target.value)}
+                placeholder="Zipcode"
+              />
+            </div>
+
+            {/* PHOTO */}
+            <div style={sectionTitle}>Profile photo</div>
+            <div style={box}>
+              <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={avatarCircle}>
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: 12, color: COLORS.muted }}>no photo</div>
+                  )}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={onPickPhoto}
+                    disabled={photoUploading}
+                  />
+                  {photoUploading && <div style={helpText}>Uploading photo...</div>}
+                  <div style={helpText}>
+                    Tip: upload a photo first, then click "Save changes".
+                  </div>
+                </div>
+
+                {photoPreview && (
+                  <button
+                    type="button"
+                    style={smallBtn}
+                    onClick={() => {
+                      setPhoto("");
+                      setPhotoPreview("");
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <button type="submit" disabled={!canSave} style={button(canSave)}>
+              {saving ? "Saving..." : "Save changes"}
+            </button>
+          </form>
         </div>
-
-        <button type="submit" disabled={saving || photoUploading || !displayName.trim()}>
-          {saving ? "Saving..." : "Save changes"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
