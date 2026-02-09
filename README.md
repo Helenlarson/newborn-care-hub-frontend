@@ -1,5 +1,8 @@
 # Newborn Care Hub — Frontend
 
+**Ada Developers Academy — Cohort 24 Capstone Project**  
+Built by Helen Larson
+
 Frontend application for **Newborn Care Hub**, where families can find and connect with newborn and postpartum care professionals.
 
 🔗 **Live App:**  
