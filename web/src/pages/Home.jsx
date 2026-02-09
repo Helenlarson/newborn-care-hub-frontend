@@ -42,7 +42,7 @@ export default function Home() {
 
             <Spacer />
 
-            {/* Links */}
+            {/* Links (ONLY Home + Blog) */}
             <HStack
               spacing={7}
               fontSize="sm"
@@ -53,17 +53,9 @@ export default function Home() {
               <Box as={RouterLink} to="/" _hover={{ opacity: 1 }}>
                 Home
               </Box>
-              <Box as={RouterLink} to="/about" _hover={{ opacity: 1 }}>
-                About
-              </Box>
+
               <Box as={RouterLink} to="/blog" _hover={{ opacity: 1 }}>
                 Blog
-              </Box>
-              <Box as={RouterLink} to="/how-it-works" _hover={{ opacity: 1 }}>
-                How It Works
-              </Box>
-              <Box as={RouterLink} to="/faq" _hover={{ opacity: 1 }}>
-                FAQ
               </Box>
             </HStack>
 
@@ -124,9 +116,7 @@ export default function Home() {
               maxW="760px"
               lineHeight="1.7"
             >
-              Find and schedule trusted professionals in pediatrics, nursing,
-              doulas and much more — all in one place, to support your family
-              at every stage.
+              Connecting families and healthcare professionals in a network of care, support and growth during the journey of motherhood and child development. Enter your ZIP code or city to explore professionals in your area.
             </Text>
 
             {/* CTAs */}
@@ -162,7 +152,12 @@ export default function Home() {
             </HStack>
 
             {/* Hero Image */}
-            <Box pt={{ base: 6, md: 8 }} w="100%" display="flex" justifyContent="center">
+            <Box
+              pt={{ base: 6, md: 8 }}
+              w="100%"
+              display="flex"
+              justifyContent="center"
+            >
               <Box
                 w={{ base: "100%", md: "760px" }}
                 borderRadius="18px"
